@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Milky Way's Rotation Curve from Gaia</title>
+<meta name="description" content="A reproducible notebook that queries the Gaia Archive, measures the Milky Way's rotation curve, and tests the fitted models on an independent sample of stars.">
+<style>
+ :root { --bg:#ffffff; --fg:#1b1f24; --muted:#59636e; --line:#d8dee4; --accent:#1f6feb; --card:#f6f8fa; }
+ @media (prefers-color-scheme: dark) { :root { --bg:#0d1117; --fg:#e6edf3; --muted:#9198a1; --line:#30363d; --accent:#4493f8; --card:#161b22; } }
+ * { box-sizing:border-box; }
+ body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+ .wrap { max-width:860px; margin:0 auto; padding:48px 20px 80px; }
+ h1 { font-size:2.1rem; line-height:1.2; margin:0 0 .3em; }
+ h2 { font-size:1.3rem; margin:2.2em 0 .6em; padding-bottom:.3em; border-bottom:1px solid var(--line); }
+ .authors { color:var(--muted); margin:0 0 1.4em; }
+ .lede { font-size:1.1rem; }
+ .btns { display:flex; flex-wrap:wrap; gap:10px; margin:1.6em 0; }
+ .btn { display:inline-block; padding:10px 16px; border-radius:8px; border:1px solid var(--line); color:var(--fg); text-decoration:none; background:var(--card); font-weight:600; font-size:.95rem; }
+ .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+ .btn:hover { filter:brightness(1.07); }
+ img { max-width:100%; border:1px solid var(--line); border-radius:8px; background:#fff; }
+ table { border-collapse:collapse; width:100%; font-size:.94rem; margin:.6em 0 1.2em; display:block; overflow-x:auto; }
+ th,td { border:1px solid var(--line); padding:7px 10px; text-align:right; white-space:nowrap; }
+ th:first-child, td:first-child { text-align:left; }
+ thead th { background:var(--card); }
+ ul { padding-left:1.2em; }
+ code { background:var(--card); padding:2px 5px; border-radius:5px; font-size:.9em; }
+ pre { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px; overflow-x:auto; }
+ footer { margin-top:3em; padding-top:1.2em; border-top:1px solid var(--line); color:var(--muted); font-size:.87rem; }
+ a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>The Milky Way's Rotation Curve, measured from Gaia</h1>
+<p class="authors">Parag Chettri and Santiago Berumen &middot; run of 2026-09-17</p>
+
+<p class="lede">A notebook that queries the ESA Gaia Archive on its own, turns 36,592 stars into a Galactocentric rotation curve, fits four models to it, and then tests those models on stars it has never seen. Everything on this page was produced by the code in the repository, with no pre-packaged data files.</p>
+
+<div class="btns">
+  <a class="btn primary" href="notebook.html">Read the full notebook</a>
+  <a class="btn" href="https://github.com/OWNER/REPO/blob/main/Rotation.ipynb">Download the notebook</a>
+  <a class="btn" href="https://colab.research.google.com/github/OWNER/REPO/blob/main/Rotation.ipynb">Run it in Colab</a>
+  <a class="btn" href="https://github.com/OWNER/REPO">Source on GitHub</a>
+</div>
+
+<img src="assets/rotation-curve.png" alt="The fitted Milky Way rotation curve, broken into bulge, stellar disk, HI and H2 layers, and dark halo">
+
+<h2>How the models compare</h2>
+<p>Every model is scored against the same binned curve with the same covariance matrix, so the numbers are directly comparable, and lower is better throughout. The last column is the gap in Bayesian Information Criterion to the best model, where a gap above 10 counts as very strong evidence.</p>
+<table><thead><tr><th>Model</th><th>k</th><th>χ²</th><th>dof</th><th>χ²/dof</th><th>AIC</th><th>BIC</th><th>ΔBIC</th></tr></thead><tbody>
+<tr><td>Keplerian</td><td>1</td><td>3676.6</td><td>21</td><td>175.07</td><td>3678.6</td><td>3679.7</td><td>3651.0</td></tr>
+<tr><td>Linear</td><td>2</td><td>88.5</td><td>20</td><td>4.42</td><td>92.5</td><td>94.7</td><td>66.0</td></tr>
+<tr><td>Simple</td><td>2</td><td>54.9</td><td>20</td><td>2.74</td><td>58.9</td><td>61.1</td><td>32.4</td></tr>
+<tr><td>Complex</td><td>3</td><td>19.4</td><td>19</td><td>1.02</td><td>25.4</td><td>28.7</td><td>0.0</td></tr>
+</tbody></table>
+
+<h2>Testing on stars the models never saw</h2>
+<p>Gaia's data releases are not independent surveys, so a "DR2 test set" usually contains the same stars as a DR3 training set, re-measured. Here the split is done by star, and the audit has to come back empty for the test to mean anything.</p>
+<table><thead><tr><th></th><th>Stars</th></tr></thead><tbody>
+<tr><td>Training stars (DR3)</td><td>36608</td></tr>
+<tr><td>Test stars downloaded (DR2)</td><td>5971</td></tr>
+<tr><td>Test stars sharing a <code>source_id</code> with training</td><td>0</td></tr>
+<tr><td>Test stars within 1″ of a training star (removed)</td><td>0</td></tr>
+<tr><td><strong>Independent test stars kept</strong></td><td><strong>5971</strong></td></tr>
+</tbody></table>
+<p>The models below were fitted to the DR3 stars only, then scored on the DR2 stars without any refitting.</p>
+<table><thead><tr><th>Model (trained on DR3)</th><th>χ² on test</th><th>χ² per bin</th></tr></thead><tbody>
+<tr><td>Keplerian</td><td>1081.7</td><td>67.61</td></tr>
+<tr><td>Linear</td><td>53.7</td><td>3.36</td></tr>
+<tr><td>Simple</td><td>45.5</td><td>2.85</td></tr>
+<tr><td>Complex</td><td>19.2</td><td>1.20</td></tr>
+</tbody></table>
+
+<h2>What it says about the Galaxy</h2>
+<table><thead><tr><th>Derived quantity</th><th>Value</th><th>Literature</th></tr></thead><tbody>
+<tr><td>Local dark matter density ρ<sub>DM</sub>(R<sub>0</sub>)</td><td>0.20 ± 0.06 GeV/cm³</td><td>0.2–0.6 GeV/cm³ (Read 2014; de Salas & Widmark 2021)</td></tr>
+<tr><td>Stellar disk mass M<sub>d</sub></td><td>7.1 × 10<sup>10</sup> ± 1.3 × 10<sup>10</sup> M☉</td><td>≈ 4–6 × 10¹⁰ M☉ (Bland-Hawthorn & Gerhard 2016)</td></tr>
+<tr><td>Dark matter fraction at the Sun f<sub>DM</sub>(R<sub>0</sub>)</td><td>0.23 ± 0.07</td><td></td></tr>
+</tbody></table>
+<p>Across the training bins, the Complex model is preferred by the Bayesian Information Criterion, ahead of the Simple model by ΔBIC = 32.4, which counts as very strong evidence. The Keplerian point-mass curve is ruled out by a wide margin, which is the classic signature that the Milky Way's mass keeps growing well beyond its bright center.</p>
+
+<h2>Reproducing it</h2>
+<pre>git clone https://github.com/OWNER/REPO.git
+cd REPO
+pip install -r requirements.txt
+jupyter lab Rotation.ipynb</pre>
+<p>The first run submits two asynchronous jobs to the Gaia Archive and takes a few minutes to half an hour. Results are cached locally, so later runs are immediate.</p>
+
+<footer>
+<p>This work has made use of data from the European Space Agency mission <em>Gaia</em>, processed by the Gaia Data Processing and Analysis Consortium (DPAC). Funding for the DPAC has been provided by national institutions, in particular the institutions participating in the Gaia Multilateral Agreement.</p>
+<p>Code and text released under the MIT License.</p>
+</footer>
+
+</div>
+</body>
+</html>
